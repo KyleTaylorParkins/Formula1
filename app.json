@@ -1,6 +1,6 @@
 {
   "id": "com.athom.formula1",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "compatibility": ">=2.4.0",
   "sdk": 2,
   "name": {
@@ -9,8 +9,8 @@
   },
   "brandcolor": "#FF0100",
   "tags": {
-        "en": ["Formula one", "F1", "Racing"],
-        "nl": ["Formule 1", "F1", "Race"]
+        "en": [ "Formula one", "F1", "Racing" ],
+        "nl": [ "Formule 1", "F1", "Race" ]
     },
   "description": {
     "en": "This app lets you integrate the current Formula 1 schedule in Homey!",
@@ -25,14 +25,14 @@
     "small": "/assets/images/small.png"
   },
   "author": {
-    "name": "Bram van Rooijen",
-    "email": "bram@athom.nl"
+    "name": "Kaalus",
+    "email": "kyle@kaalus.nl"
   },
   "contributors": {
     "developers": [
       {
-        "name": "Kyle Taylor Parkins",
-        "email": "kyle@athom.nl"
+        "name": "Bram van Rooijen",
+        "email": "bram@athom.nl"
       }
     ]
   },

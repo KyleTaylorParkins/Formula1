@@ -1,0 +1,6 @@
+{
+  "1.0.4": {
+    "en": "Fixed a bug that would trigger Flows on boot and 24 hours.",
+    "nl": "Bug opgelost welke Flows triggert bij elke start en elke 24 uur."
+  }
+}

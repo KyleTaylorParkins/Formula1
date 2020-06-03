@@ -6,6 +6,7 @@ const FormulaOneApi = require('./lib/FormulaOneApi');
 const AFTER_RACE_TIMEOUT = 2.5 * 60 * 60 * 1000; // 2.5 hours in miliseconds
 const RACE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in miliseconds
 const DATA_REFRESH_TIMEOUT = 24 * 60 * 60 *1000; // 24 hours data refresh in milliseconds
+const TIMER_THRESHOLD = 2 * 24 * 60 * 60 * 1000 // 2 Days in miliseconds
 
 class FormulaOne extends Homey.App {
 	
@@ -77,6 +78,7 @@ class FormulaOne extends Homey.App {
 
 		const timeDelta = (this.raceStartTime.getTime() - Date.now());
 
+		if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
 		if (timeDelta <= 0) return; // We don't want to trigger after the race has started
 
 		this.log('Setting timers for race_start trigger with timeout', timeDelta);
@@ -100,6 +102,7 @@ class FormulaOne extends Homey.App {
 
 		const timeDelta = (this.raceStartTime.getTime() - Date.now());
 
+		if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
 		if (timeDelta <= 0) return; // We don't want to trigger after the race has started
 
 		this.log('Setting timers for before_start trigger with timeout', timeDelta);
@@ -151,6 +154,8 @@ class FormulaOne extends Homey.App {
 	async triggerWinnerFlow() {
 		const nextRace = await this.api.getNextRace();
 		const raceStartTime = new Date(`${nextRace.date}T${nextRace.time}`);
+
+		if (raceStartTime >= TIMER_THRESHOLD) return;
 
 		const refreshTimeOut = raceStartTime.getTime() + AFTER_RACE_TIMEOUT;
 		const timeout = refreshTimeOut - Date.now();

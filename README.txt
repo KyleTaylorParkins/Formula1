@@ -1,0 +1,2 @@
+Integrate the Formula 1 schedule in Homey and never miss a race again.
+Let Homey notify you before the race starts to have some drinks ready. Did you still miss the race, Homey can let you know who won the race and what the current driver standings are.
