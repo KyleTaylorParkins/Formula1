@@ -1,0 +1,19 @@
+{
+  "name": "com.athom.formula1",
+  "version": "1.0.4",
+  "description": "This app integrates the Formula 1 season into Homey",
+  "main": "app.js",
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  },
+  "engines": {
+    "node": ">=8.9.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KyleTaylorParkins/Formula1.git"
+  },
+  "author": "",
+  "license": "GPL"
+}
