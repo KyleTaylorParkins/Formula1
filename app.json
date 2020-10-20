@@ -1,8 +1,8 @@
 {
   "id": "com.athom.formula1",
-  "version": "1.0.5",
-  "compatibility": ">=2.4.0",
-  "sdk": 2,
+  "version": "1.0.6",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
   "name": {
     "en": "Formula 1",
     "nl": "Formule 1"

@@ -14,28 +14,20 @@ class FormulaOne extends Homey.App {
 		this.api = new FormulaOneApi();
 
 		// Flows aanmaken
-    	this.raceStartTriggerFlow = new Homey.FlowCardTrigger('race_start');
-		this.raceStartTriggerFlow
-			.register();
+    	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
 
-		this.raceStartsInTriggerFlow = new Homey.FlowCardTrigger('race_in');
-		this.raceStartsInTriggerFlow
-			.register()
-			.registerRunListener(async (args, state) => {
-				if (args.time_before == state.time) return true;
-				else return false;
-			})
+		this.raceStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
+		this.raceStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
+			else return false;
+		});
 
-		this.raceWonByTriggerFlow = new Homey.FlowCardTrigger('winner');
-		this.raceWonByTriggerFlow
-			.register();
+		this.raceWonByTriggerFlow = this.homey.flow.getTriggerCard('winner');
 
-		this.isRacingConditionFlow = new Homey.FlowCardCondition('is_racing');
-		this.isRacingConditionFlow
-			.register()
-			.registerRunListener(async (args, state) => {
-				return this.isRaceOngoing();
-			})
+		this.isRacingConditionFlow = this.homey.flow.getConditionCard('is_racing');
+		this.isRacingConditionFlow.registerRunListener(async (args, state) => {
+			return this.isRaceOngoing();
+		})
 	
 		// Set Flow timeout
 		this.setTimerRaceStart();
@@ -178,15 +170,12 @@ class FormulaOne extends Homey.App {
 			if (standings.length != this.driverStandingTokens.length){
 				for (var counter = 0; counter <= standings.length; counter++) {
 					this.driverStandingTokens.push(
-						new Homey.FlowToken(`standing_${counter}`, {
+						await this.homey.flow.createToken(`standing_${counter}`, {
 							type: 'string',
 							title: `Postion ${1 + counter}`
 						})
 					);
 				}
-				this.driverStandingTokens.forEach(async standingToken => {
-					await standingToken.register();
-				})
 			}
 
 			setTimeout(() => {
