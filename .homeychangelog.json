@@ -2,5 +2,9 @@
   "1.0.4": {
     "en": "Fixed a bug that would trigger Flows on boot and 24 hours.",
     "nl": "Bug opgelost welke Flows triggert bij elke start en elke 24 uur."
+  },
+  "2.0.0": {
+    "en": "Ready for season 2021! Switched to SDKv3. Minor improvements.",
+    "nl": "Klaar voor seizoen 2021! Eerste versie met SDKv3. Diverse kleine aanpassingen."
   }
 }

@@ -1,0 +1,27 @@
+{
+    "id": "race_start",
+        "title": {
+          "en": "The next race starts",
+          "nl": "De volgende race begint"
+        },
+        "tokens": [
+          {
+            "name": "race_name",
+            "type": "string",
+            "title": {
+              "en": "Racename",
+              "nl": "Racenaam"
+            },
+            "example": "Monaco"
+        },
+        {
+          "name": "circuit",
+          "type": "string",
+          "title": {
+            "en": "Circuit",
+            "nl": "Circuit"
+          },
+          "example": "Monza"
+        }
+    ]
+}

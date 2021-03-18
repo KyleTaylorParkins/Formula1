@@ -1,19 +1,19 @@
 'use strict';
 
-const Homey = require('homey');
+const Homey			= require('homey');
 const FormulaOneApi = require('./lib/FormulaOneApi');
 
-const AFTER_RACE_TIMEOUT = 2.5 * 60 * 60 * 1000; // 2.5 hours in miliseconds
-const RACE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in miliseconds
-const DATA_REFRESH_TIMEOUT = 24 * 60 * 60 *1000; // 24 hours data refresh in milliseconds
-const TIMER_THRESHOLD = 2 * 24 * 60 * 60 * 1000 // 2 Days in miliseconds
+const AFTER_RACE_TIMEOUT	= 2.5 * 60 * 60 * 1000;		// 2.5 hours in miliseconds
+const RACE_DURATION			= 2 * 60 * 60 * 1000;		// 2 hours in miliseconds
+const DATA_REFRESH_TIMEOUT	= 24 * 60 * 60 *1000;		// 24 hours data refresh in milliseconds
+const TIMER_THRESHOLD		= 2 * 24 * 60 * 60 * 1000	// 2 Days in miliseconds
 
 class FormulaOne extends Homey.App {
 	
 	onInit() {
 		this.api = new FormulaOneApi();
 
-		// Flows aanmaken
+		// Create the Flows
     	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
 
 		this.raceStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
@@ -144,6 +144,7 @@ class FormulaOne extends Homey.App {
 			if (this.winnerTimeout) clearTimeout(this.winnerTimeout);
 			this.winnerTimeout = setTimeout(async () => {
 				const winnerData = await this.api.getWinner();
+				this.log("Triggering winner flow");
 				this.raceWonByTriggerFlow.trigger({
 					driver_name: `${winnerData.givenName} ${winnerData.familyName}`,
 				})

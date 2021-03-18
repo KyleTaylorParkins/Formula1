@@ -1,17 +1,26 @@
 {
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "com.athom.formula1",
-  "version": "1.0.6",
+  "version": "2.0.0",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "name": {
     "en": "Formula 1",
     "nl": "Formule 1"
   },
-  "brandcolor": "#FF0100",
+  "brandColor": "#E10600",
   "tags": {
-        "en": [ "Formula one", "F1", "Racing" ],
-        "nl": [ "Formule 1", "F1", "Race" ]
-    },
+    "en": [
+      "Formula one",
+      "F1",
+      "Racing"
+    ],
+    "nl": [
+      "Formule 1",
+      "F1",
+      "Race"
+    ]
+  },
   "description": {
     "en": "This app lets you integrate the current Formula 1 schedule in Homey!",
     "nl": "Deze app maakt het mogelijk om het Formule 1 seizoensschema te integreren in Homey!"
@@ -37,39 +46,16 @@
     ]
   },
   "flow": {
-     "triggers": [
+    "triggers": [
       {
-        "id": "race_start",
-        "title": {
-          "en": "The next race starts",
-          "nl": "De volgende race begint"
-        },
-        "tokens": [
-          {
-            "name": "race_name",
-            "type": "string",
-            "title": {
-              "en": "Racename",
-              "nl": "Racenaam"
-            },
-            "example": "Monaco"
-        },
-        {
-          "name": "circuit",
-          "type": "string",
-          "title": {
-            "en": "Circuit",
-            "nl": "Circuit"
-          },
-          "example": "Monza"
-        }
-      ]
-    },
-    {
         "id": "race_in",
         "title": {
           "en": "The race is going to start in...",
-          "nl": "De race gaat beginnen in..."
+          "nl": "De race gaat beginnen over..."
+        },
+        "titleFormatted": {
+          "en": "The race is going to start in [[time_before]]",
+          "nl": "De race gaat beginnen over [[time_before]]"
         },
         "args": [
           {
@@ -114,35 +100,62 @@
                   "nl": "Racenaam"
                 },
                 "example": "Monaco"
-            },
-            {
-              "name": "circuit",
-              "type": "string",
-              "title": {
-                "en": "Circuit",
-                "nl": "Circuit"
               },
-              "example": "Monza"
-            }
-          ]
+              {
+                "name": "circuit",
+                "type": "string",
+                "title": {
+                  "en": "Circuit",
+                  "nl": "Circuit"
+                },
+                "example": "Monza"
+              }
+            ]
           }
         ]
+      },
+      {
+        "id": "race_start",
+        "title": {
+          "en": "The next race starts",
+          "nl": "De volgende race begint"
         },
-        {
-          "id": "winner",
-          "title": {
-            "en": "The race is won by",
-            "nl": "De race is gewonnen door"
+        "tokens": [
+          {
+            "name": "race_name",
+            "type": "string",
+            "title": {
+              "en": "Racename",
+              "nl": "Racenaam"
+            },
+            "example": "Monaco"
           },
-          "tokens": [
-            {
-              "name": "driver_name",
-              "type": "string",
-              "title": {
-                "en": "Driver",
-                "nl": "Coureur"
-              },
-              "example": "Max Verstappen"
+          {
+            "name": "circuit",
+            "type": "string",
+            "title": {
+              "en": "Circuit",
+              "nl": "Circuit"
+            },
+            "example": "Monza"
+          }
+        ]
+      },
+      {
+        "id": "winner",
+        "title": {
+          "en": "The race is won by",
+          "nl": "De race is gewonnen door"
+        },
+        "tokens": [
+          {
+            "name": "driver_name",
+            "type": "string",
+            "title": {
+              "en": "Driver",
+              "nl": "Coureur"
+            },
+            "example": "Max Verstappen"
           }
         ]
       }

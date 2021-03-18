@@ -1,0 +1,18 @@
+{
+    "id": "winner",
+    "title": {
+        "en": "The race is won by",
+        "nl": "De race is gewonnen door"
+    },
+    "tokens": [
+        {
+            "name": "driver_name",
+            "type": "string",
+            "title": {
+            "en": "Driver",
+            "nl": "Coureur"
+            },
+            "example": "Max Verstappen"
+        }
+    ]
+}
