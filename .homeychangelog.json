@@ -6,5 +6,9 @@
   "2.0.0": {
     "en": "Ready for season 2021! Switched to SDKv3. Minor improvements.",
     "nl": "Klaar voor seizoen 2021! Eerste versie met SDKv3. Diverse kleine aanpassingen."
+  },
+  "2.0.1": {
+    "en": "Added qualifying timer.",
+    "nl": "Kwalificatie timer toegevoegd."
   }
 }
