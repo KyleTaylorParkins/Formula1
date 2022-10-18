@@ -3,15 +3,18 @@
 const Homey			= require('homey');
 const FormulaOneApi = require('./lib/FormulaOneApi');
 
-const AFTER_RACE_TIMEOUT	= 2.5	* 60 * 60 * 1000;		// 2.5 hours in miliseconds
-const RACE_DURATION			= 2		* 60 * 60 * 1000;		// 2 hours in miliseconds
-const DATA_REFRESH_TIMEOUT	= 24	* 60 * 60 * 1000;		// 24 hours data refresh in milliseconds
-const TIMER_THRESHOLD		= 2* 24 * 60 * 60 * 1000		// 2 Days in miliseconds
+const AFTER_RACE_TIMEOUT	= 3		* 60 * 60 * 1000;		// 3 hours timeout for after the race
+const RACE_DURATION			= 2		* 60 * 60 * 1000;		// 2 hours in which the race should be finished
+const DATA_REFRESH_TIMEOUT	= 24	* 60 * 60 * 1000;		// 24 hours data refresh
+const TIMER_THRESHOLD		= 2* 24 * 60 * 60 * 1000;		// 2 Days threshold for timers
+const TEST_REFRESH			= 5			 * 60 * 1000;		// 5 minute test timeout
 
 class FormulaOne extends Homey.App {
 	
 	async onInit() {
 		this.api = new FormulaOneApi();
+
+		this.test = true;
 
 		// Create the Flows
     	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
@@ -22,7 +25,7 @@ class FormulaOne extends Homey.App {
 			else return false;
 		});
 
-		this.qualiStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
+		this.qualiStartsInTriggerFlow = this.homey.flow.getTriggerCard('qualifying_in');
 		this.qualiStartsInTriggerFlow.registerRunListener(async (args, state) => {
 			if (args.time_before == state.time) return true;
 			else return false;
@@ -44,9 +47,12 @@ class FormulaOne extends Homey.App {
 
 		// Create app tokens
 		this.driverStandingTokens = [];
+		await this.createDriverStandingTokens();
 		this.fillDriverStandingTokens();
 
 		// Updater loopje
+		const updaterTimeout = this.test ? TEST_REFRESH : DATA_REFRESH_TIMEOUT;
+		this.log(`Using update timeout: ${updaterTimeout}`);
 		this.updaterLoop = setInterval(async() => {
 			this.log('Updating data from API');
 			this.nextRace = await this.api.getNextRace();
@@ -56,7 +62,7 @@ class FormulaOne extends Homey.App {
 			this.setTimerRaceStart();
 			this.setTimerBeforeQualifyingStart();
 			this.triggerWinnerFlow();
-		}, DATA_REFRESH_TIMEOUT);
+		}, updaterTimeout);
 	}
 
 	// Helper function to create Flow Trigger timers
@@ -181,31 +187,33 @@ class FormulaOne extends Homey.App {
 			if (timeout > 0 && timeout <= RACE_DURATION) return true;
 			else return false;
 			}
+	}
+
+	async createDriverStandingTokens() {
+		// Use the current standings to get the current amount of drivers in the season.
+		const standings = await this.api.getDriverStandings();
+		if (standings && (standings.length != this.driverStandingTokens.length)) {
+			for (var counter = 0; counter <= standings.length; counter++) {
+				this.driverStandingTokens.push(
+					await this.homey.flow.createToken(`standing_${counter}`, {
+						type: 'string',
+						title: `Position ${1 + counter}`
+					})
+				);
+			}
 		}
+	}
 
 	async fillDriverStandingTokens() {
 		const standings = await this.api.getDriverStandings();
 		if (standings) {
-			if (standings.length != this.driverStandingTokens.length){
-				for (var counter = 0; counter <= standings.length; counter++) {
-					this.driverStandingTokens.push(
-						await this.homey.flow.createToken(`standing_${counter}`, {
-							type: 'string',
-							title: `Postion ${1 + counter}`
-						})
-					);
-				}
+			var counter = 0;
+			if (standings) {
+				standings.forEach(standing => {
+					this.driverStandingTokens[counter].setValue(`${standing.position}. ${standing.givenName} ${standing.familyName}`);
+					counter++;
+				});
 			}
-
-			setTimeout(() => {
-				var counter = 0;
-				if (standings) {
-					standings.forEach(standing => {
-						this.driverStandingTokens[counter].setValue(`${standing.position}. ${standing.givenName} ${standing.familyName}`);
-						counter++;
-					});
-				}
-			}, 3000);
 		}
 	}
 }
