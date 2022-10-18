@@ -14,7 +14,7 @@ class FormulaOne extends Homey.App {
 	async onInit() {
 		this.api = new FormulaOneApi();
 
-		this.test = true;
+		this.test = false;
 
 		// Create the Flows
     	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
@@ -52,7 +52,6 @@ class FormulaOne extends Homey.App {
 
 		// Updater loopje
 		const updaterTimeout = this.test ? TEST_REFRESH : DATA_REFRESH_TIMEOUT;
-		this.log(`Using update timeout: ${updaterTimeout}`);
 		this.updaterLoop = setInterval(async() => {
 			this.log('Updating data from API');
 			this.nextRace = await this.api.getNextRace();
@@ -79,7 +78,6 @@ class FormulaOne extends Homey.App {
     }
 
 	async setTimerRaceStart() {
-		// this.nextRace = await this.api.getNextRace();
 		if (this.nextRace) { // todo handle reject/result?
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
@@ -130,7 +128,6 @@ class FormulaOne extends Homey.App {
 	}
 
 	async setTimerRaceStart() {
-		// this.nextRace = await this.api.getNextRace();
 		if (this.nextRace) {
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 

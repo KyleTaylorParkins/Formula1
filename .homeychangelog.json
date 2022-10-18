@@ -10,5 +10,8 @@
   "2.0.1": {
     "en": "Added qualifying timer.",
     "nl": "Kwalificatie timer toegevoegd."
+  },
+  "2.0.2": {
+    "en": "Added API caching. Fixed token creation crashes."
   }
 }
