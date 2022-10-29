@@ -13,5 +13,8 @@
   },
   "2.0.2": {
     "en": "Added API caching. Fixed token creation crashes."
+  },
+  "2.0.3": {
+    "en": "Fixed Flows that where triggering multiple times. Fixed qualification triggers."
   }
 }
