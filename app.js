@@ -3,25 +3,29 @@
 const Homey			= require('homey');
 const FormulaOneApi = require('./lib/FormulaOneApi');
 
+const MINUTE				= 1		* 60	  * 1000;		// One minute used for timouts etc
 const AFTER_RACE_TIMEOUT	= 3		* 60 * 60 * 1000;		// 3 hours timeout for after the race
 const RACE_DURATION			= 2		* 60 * 60 * 1000;		// 2 hours in which the race should be finished
 const DATA_REFRESH_TIMEOUT	= 24	* 60 * 60 * 1000;		// 24 hours data refresh
 const TIMER_THRESHOLD		= 2* 24 * 60 * 60 * 1000;		// 2 Days threshold for timers
-const TEST_REFRESH			= 5			 * 60 * 1000;		// 5 minute test timeout
+const TEST_REFRESH			= 1			 * 60 * 1000;		// 5 minute test timeout
 
 class FormulaOne extends Homey.App {
 	
 	async onInit() {
-		this.api = new FormulaOneApi();
+		this.test = true;
 
-		this.test = false;
+		this.api = new FormulaOneApi(this.test);
 
 		// Create the Flows
     	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
 
 		this.raceStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
 		this.raceStartsInTriggerFlow.registerRunListener(async (args, state) => {
-			if (args.time_before == state.time) return true;
+			if (args.time_before == state.time) {
+				this.log(`Trigger race_in with time arg: ${state.time}`);
+				return true;
+			}
 			else return false;
 		});
 
@@ -41,7 +45,7 @@ class FormulaOne extends Homey.App {
 		this.nextRace = await this.api.getNextRace();
 	
 		// Set Flow timeout
-		this.setTimerRaceStart();
+		this.setTimerBeforeRaceStart();
 		this.setTimerBeforeQualifyingStart();
 		this.triggerWinnerFlow();
 
@@ -58,7 +62,7 @@ class FormulaOne extends Homey.App {
 
 			// Update all elements
 			this.fillDriverStandingTokens();
-			this.setTimerRaceStart();
+			this.setTimerBeforeRaceStart();
 			this.setTimerBeforeQualifyingStart();
 			this.triggerWinnerFlow();
 		}, updaterTimeout);
@@ -73,11 +77,11 @@ class FormulaOne extends Homey.App {
                 race_name: this.nextRace.raceName,
 				circuit: this.nextRace.circuit,
             }, { time: `${timeout}` });
-        }, timeDelta - (timeout * 60 * 1000));
+        }, timeDelta - (timeout * MINUTE));
 		return timerTemp;
     }
 
-	async setTimerRaceStart() {
+	async setTimerBeforeRaceStart() {
 		if (this.nextRace) { // todo handle reject/result?
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
@@ -104,30 +108,30 @@ class FormulaOne extends Homey.App {
 
 	async setTimerBeforeQualifyingStart() {
 		if (this.nextRace) {
-			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
+			this.raceStartTime = new Date(`${this.nextRace.qualifying.date}T${this.nextRace.qualifying.time}`);
 
 			const timeDelta = (this.raceStartTime.getTime() - Date.now());
 
 			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
 			if (timeDelta <= 0) return; // We don't want to trigger after the race has started
 
-			this.log('Setting timers for before_start trigger with timeout', timeDelta);
+			this.log('Setting timers for qualifying_in trigger with timeout', (timeDelta / 1000 / 60));
 
 			if (this.fiveMinQualiTimeout) clearTimeout(this.fiveMinRaceTimeout);
-			this.fiveMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 5);
+			if (timeDelta >= (5 * MINUTE)) this.fiveMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 5);
 			
 			if (this.tenMinQualiTimeout) clearTimeout(this.tenMinRaceTimeout);
-			this.tenMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 10);
+			if (timeDelta >= (10 * MINUTE)) this.tenMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 10);
 
 			if (this.thirtyMinQualiTimeout) clearTimeout(this.thirtyMinRaceTimeout);
-			this.thirtyMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 30);
+			if (timeDelta >= (30 * MINUTE)) this.thirtyMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 30);
 
 			if (this.sixtyMinQualiTimeout) clearTimeout(this.sixtyMinRaceTimeout);
-			this.sixtyMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 60);
+			if (timeDelta >= (60 * MINUTE)) this.sixtyMinQualiTimeout = this.getTimerFlowTrigger(this.qualiStartsInTriggerFlow, 60);
 		}
 	}
 
-	async setTimerRaceStart() {
+	async setTimerBeforeRaceStart() {
 		if (this.nextRace) {
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
@@ -136,19 +140,20 @@ class FormulaOne extends Homey.App {
 			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
 			if (timeDelta <= 0) return; // We don't want to trigger after the race has started
 
-			this.log('Setting timers for before_quali_start trigger with timeout', timeDelta);
+			this.log('Setting timers for race_in trigger with timeout', (timeDelta / 1000 / 60));
 
+			// Clear timeouts and check if the time remaining to the race is longer then the time to trigger
 			if (this.fiveMinRaceTimeout) clearTimeout(this.fiveMinRaceTimeout);
-			this.fiveMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 5);
+			if (timeDelta >= (5 * MINUTE)) this.fiveMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 5);
 			
 			if (this.tenMinRaceTimeout) clearTimeout(this.tenMinRaceTimeout);
-			this.tenMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 10);
+			if (timeDelta >= (10 * MINUTE)) this.tenMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 10);
 
 			if (this.thirtyMinRaceTimeout) clearTimeout(this.thirtyMinRaceTimeout);
-			this.thirtyMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 30);
+			if (timeDelta >= (30 * MINUTE)) this.thirtyMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 30);
 
 			if (this.sixtyMinRaceTimeout) clearTimeout(this.sixtyMinRaceTimeout);
-			this.sixtyMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 60);
+			if (timeDelta >= (60 * MINUTE)) this.sixtyMinRaceTimeout = this.getTimerFlowTrigger(this.raceStartsInTriggerFlow, 60);
 		}
 	}
 
