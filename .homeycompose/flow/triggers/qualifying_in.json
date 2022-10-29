@@ -1,14 +1,14 @@
 {
     "id": "qualifying_in",
-        "title": {
-            "en": "The qualifying is going to start in...",
-            "nl": "De kwalificatie gaat beginnen over..."
+    "title": {
+        "en": "The qualifying is going to start in...",
+        "nl": "De kwalificatie gaat beginnen over..."
+    },
+    "titleFormatted": {
+        "en": "The qualifying is going to start in [[time_before]]",
+        "nl": "De kwalificatie gaat beginnen over [[time_before]]"
         },
-        "titleFormatted": {
-            "en": "The qualifying is going to start in [[time_before]]",
-            "nl": "De kwalificatie gaat beginnen over [[time_before]]"
-          },
-        "args": [
+    "args": [
         {
             "name": "time_before",
             "type": "dropdown",
@@ -41,27 +41,27 @@
                         "nl": "1 hour"
                     }
                 }
-            ],
-            "tokens": [
-                {
-                    "name": "race_name",
-                    "type": "string",
-                    "title": {
-                        "en": "Racename",
-                        "nl": "Racenaam"
-                    },
-                    "example": "Monaco"
-                },
-                {
-                "name": "circuit",
-                "type": "string",
-                "title": {
-                        "en": "Circuit",
-                        "nl": "Circuit"
-                },
-                "example": "Monza"
-                }
             ]
+        }
+    ],
+    "tokens": [
+        {
+            "name": "race_name",
+            "type": "string",
+            "title": {
+                "en": "Racename",
+                "nl": "Racenaam"
+            },
+            "example": "Monaco"
+        },
+        {
+        "name": "circuit",
+        "type": "string",
+        "title": {
+                "en": "Circuit",
+                "nl": "Circuit"
+        },
+        "example": "Monza"
         }
     ]
 }
