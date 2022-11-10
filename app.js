@@ -43,16 +43,18 @@ class FormulaOne extends Homey.App {
 		})
 
 		this.nextRace = await this.api.getNextRace();
-	
-		// Set Flow timeout
-		this.setTimerBeforeRaceStart();
-		this.setTimerBeforeQualifyingStart();
-		this.triggerWinnerFlow();
 
-		// Create app tokens
-		this.driverStandingTokens = [];
-		await this.createDriverStandingTokens();
-		this.fillDriverStandingTokens();
+		if (!this.nextRace === null) {
+			// Set Flow timeout
+			this.setTimerBeforeRaceStart();
+			this.setTimerBeforeQualifyingStart();
+			this.triggerWinnerFlow();
+
+			// Create app tokens
+			this.driverStandingTokens = [];
+			await this.createDriverStandingTokens();
+			this.fillDriverStandingTokens();
+		}
 
 		// Updater loopje
 		const updaterTimeout = this.test ? TEST_REFRESH : DATA_REFRESH_TIMEOUT;
@@ -60,11 +62,13 @@ class FormulaOne extends Homey.App {
 			this.log('Updating data from API');
 			this.nextRace = await this.api.getNextRace();
 
-			// Update all elements
-			this.fillDriverStandingTokens();
-			this.setTimerBeforeRaceStart();
-			this.setTimerBeforeQualifyingStart();
-			this.triggerWinnerFlow();
+			if (!this.nextRace === null) {
+				// Update all elements
+				this.fillDriverStandingTokens();
+				this.setTimerBeforeRaceStart();
+				this.setTimerBeforeQualifyingStart();
+				this.triggerWinnerFlow();
+			}
 		}, updaterTimeout);
 	}
 
