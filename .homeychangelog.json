@@ -12,6 +12,15 @@
     "nl": "Kwalificatie timer toegevoegd."
   },
   "2.0.2": {
-    "en": "Added API caching. Fixed token creation crashes."
+    "en": "Added API caching. Fixed token creation crashes.",
+    "nl": "API caching toegevoegd. Bug opgelost met het aanmaken van de stand tokens."
+  },
+  "2.0.3": {
+    "en": "Fixed Flows that where triggering multiple times. Fixed qualification triggers.",
+    "nl": "Bug opgelsot waarbij Flows meerdere keren werder gestart. Kwalificatie triggers volledig toegevoegd."
+  },
+  "2.0.4": {
+    "en": "Hotfix to prevent crashes when the API is not available",
+    "nl": "Hotfix om crashen te voorkomen wanneer de API niet bereikt kan worden."
   }
 }
