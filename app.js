@@ -20,17 +20,20 @@ class FormulaOne extends Homey.App {
 		// Create the Flows
     	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
 
-		this.raceStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
-		this.raceStartsInTriggerFlow.registerRunListener(async (args, state) => {
-			if (args.time_before == state.time) {
-				this.log(`Trigger race_in with time arg: ${state.time}`);
-				return true;
-			}
+		this.qualiStartsInTriggerFlow = this.homey.flow.getTriggerCard('qualifying_in');
+		this.qualiStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
 			else return false;
 		});
 
-		this.qualiStartsInTriggerFlow = this.homey.flow.getTriggerCard('qualifying_in');
-		this.qualiStartsInTriggerFlow.registerRunListener(async (args, state) => {
+		this.raceStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
+		this.raceStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
+			else return false;
+		});
+
+		this.sprintRaceStartsInTriggerFlow = this.homey.flow.getTriggerCard('sprint_in');
+		this.sprintRaceStartsInTriggerFlow.registerRunListener(async (args, state) => {
 			if (args.time_before == state.time) return true;
 			else return false;
 		});
@@ -44,10 +47,11 @@ class FormulaOne extends Homey.App {
 
 		this.nextRace = await this.api.getNextRace();
 
-		if (!this.nextRace === null) {
+		if (this.nextRace !== null) {
 			// Set Flow timeout
 			this.setTimerBeforeRaceStart();
 			this.setTimerBeforeQualifyingStart();
+			this.setTimerBeforeSprintRaceStart();
 			this.triggerWinnerFlow();
 
 			// Create app tokens
@@ -62,11 +66,12 @@ class FormulaOne extends Homey.App {
 			this.log('Updating data from API');
 			this.nextRace = await this.api.getNextRace();
 
-			if (!this.nextRace === null) {
+			if (!this.nextRace !== null) {
 				// Update all elements
 				this.fillDriverStandingTokens();
 				this.setTimerBeforeRaceStart();
 				this.setTimerBeforeQualifyingStart();
+				this.setTimerBeforeSprintRaceStart();
 				this.triggerWinnerFlow();
 			}
 		}, updaterTimeout);
@@ -175,6 +180,50 @@ class FormulaOne extends Homey.App {
 			if (timeDelta >= (60 * MINUTE)) this.sixtyMinRaceTimeout = setTimeout(() => {
 				this.log('Triggering 60 minutes start timer');
 				this.raceStartsInTriggerFlow.trigger(raceObject, {time: "60"} );
+			}, (timeDelta - (60 * MINUTE)) );
+		}
+	}
+
+	async setTimerBeforeSprintRaceStart() {
+		if (this.nextRace) {
+			this.raceStartTime = new Date(`${this.nextRace.sprint.date}T${this.nextRace.sprint.time}`);
+	
+			const timeDelta = (this.raceStartTime.getTime() - Date.now());
+	
+			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
+			if (timeDelta <= 0) return; 			  // We don't want to trigger after the race has started
+	
+			this.log('Setting timers for sprint_in trigger with timeout', (timeDelta / 1000 / 60));
+	
+			const raceObject = {
+				race_name: this.nextRace.raceName,
+				circuit: this.nextRace.circuit,
+			}
+	
+			// Clear timeouts and check if the time remaining to the race is longer then the time to trigger
+			if (this.fiveMinSprintRaceTimeout) clearTimeout(this.fiveMinSprintRaceTimeout);
+			if (timeDelta >= (5 * MINUTE)) this.fiveMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 5 minutes sprint start timer');
+				// Trigger the flow and create token data
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "5"} );
+			}, (timeDelta - (5 * MINUTE)) );
+			
+			if (this.tenMinSprintRaceTimeout) clearTimeout(this.tenMinSprintRaceTimeout);
+			if (timeDelta >= (10 * MINUTE)) this.tenMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 10 minutes start timer');
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "10"} );
+			}, (timeDelta - (10 * MINUTE)) );
+	
+			if (this.thirtyMinSprintRaceTimeout) clearTimeout(this.thirtyMinSprintRaceTimeout);
+			if (timeDelta >= (30 * MINUTE)) this.thirtyMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 30 minutes start timer');
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "30"} );
+			}, (timeDelta - (30 * MINUTE)) );
+	
+			if (this.sixtyMinSprintRaceTimeout) clearTimeout(this.sixtyMinSprintRaceTimeout);
+			if (timeDelta >= (60 * MINUTE)) this.sixtyMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 60 minutes start timer');
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "60"} );
 			}, (timeDelta - (60 * MINUTE)) );
 		}
 	}

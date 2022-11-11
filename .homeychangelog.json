@@ -22,5 +22,9 @@
   "2.0.4": {
     "en": "Hotfix to prevent crashes when the API is not available",
     "nl": "Hotfix om crashen te voorkomen wanneer de API niet bereikt kan worden."
+  },
+  "2.0.5": {
+    "en": "Added Flow trigger for the sprint races. Fixed a bug to prevent wrong null check.",
+    "nl": "Flow trigger voor de sprintraces toegevoegd. Bug opgelost met null check."
   }
 }
