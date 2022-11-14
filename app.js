@@ -13,7 +13,7 @@ const TEST_REFRESH			= 1			 * 60 * 1000;		// 5 minute test timeout
 class FormulaOne extends Homey.App {
 	
 	async onInit() {
-		this.test = true;
+		this.test = false;
 
 		this.api = new FormulaOneApi(this.test);
 
@@ -108,7 +108,7 @@ class FormulaOne extends Homey.App {
 	}
 
 	async setTimerBeforeQualifyingStart() {
-		if (this.nextRace) {
+		if (this.nextRace && this.nextRace.qualifying !== undefined) {
 			this.raceStartTime = new Date(`${this.nextRace.qualifying.date}T${this.nextRace.qualifying.time}`);
 
 			const timeDelta = (this.raceStartTime.getTime() - Date.now());
@@ -190,7 +190,8 @@ class FormulaOne extends Homey.App {
 	}
 
 	async setTimerBeforeSprintRaceStart() {
-		if (this.nextRace) {
+		if (this.nextRace && this.nextRace.sprint !== undefined) {
+			this.log(`SPRINT: ${this.nextRace.sprint}`);
 			this.raceStartTime = new Date(`${this.nextRace.sprint.date}T${this.nextRace.sprint.time}`);
 	
 			const timeDelta = (this.raceStartTime.getTime() - Date.now());

@@ -1,6 +1,6 @@
 {
   "id": "com.athom.formula1",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "name": {
@@ -21,8 +21,8 @@
     ]
   },
   "description": {
-    "en": "This app lets you integrate the current Formula 1 schedule in Homey!",
-    "nl": "Deze app maakt het mogelijk om het Formule 1 seizoensschema te integreren in Homey!"
+    "en": "Never miss a Formula 1 race again!",
+    "nl": "Mis geen enkele Formule 1 race meer!"
   },
   "category": [
     "tools"
