@@ -13,7 +13,7 @@ const TEST_REFRESH			= 1			 * 60 * 1000;		// 5 minute test timeout
 class FormulaOne extends Homey.App {
 	
 	async onInit() {
-		this.test = false;
+		this.test = true;
 
 		this.api = new FormulaOneApi(this.test);
 
@@ -43,7 +43,12 @@ class FormulaOne extends Homey.App {
 		this.isRacingConditionFlow = this.homey.flow.getConditionCard('is_racing');
 		this.isRacingConditionFlow.registerRunListener(async (args, state) => {
 			return this.isRaceOngoing();
-		})
+		});
+		
+		this.isRaceDayConditionFlow = this.homey.flow.getConditionCard('is_raceday');
+		this.isRaceDayConditionFlow.registerRunListener(async (args, state) => {
+			return this.isRaceDay();
+		});
 
 		this.nextRace = await this.api.getNextRace();
 
@@ -229,9 +234,8 @@ class FormulaOne extends Homey.App {
 	}
 
 	async triggerWinnerFlow() {
-		const nextRace = await this.api.getNextRace();
-		if (nextRace) {
-			const raceStartTime = new Date(`${nextRace.date}T${nextRace.time}`);
+		if (this.nextRace) {
+			const raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			if (raceStartTime >= TIMER_THRESHOLD) return;
 
@@ -244,22 +248,39 @@ class FormulaOne extends Homey.App {
 				this.log("Triggering winner flow");
 				this.raceWonByTriggerFlow.trigger({
 					driver_name: `${winnerData.givenName} ${winnerData.familyName}`,
-				})
+				});
 			}, timeout);
 		}
 	}
 
 	async isRaceOngoing() {
-		const nextRace = await this.api.getNextRace();
-			if (nextRace) {
-			const raceStartTime = new Date(`${nextRace.date}T${nextRace.time}`);
+		if (this.nextRace) {
+			const raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			const refreshTimeOut = raceStartTime.getTime() + AFTER_RACE_TIMEOUT;
 			const timeout = refreshTimeOut - Date.now();
 
 			if (timeout > 0 && timeout <= RACE_DURATION) return true;
 			else return false;
-			}
+		} else {
+			// Not the best solution, but otherwise the flow hangs
+			return false;
+		}
+	}
+
+	async isRaceDay() {
+		if (this.nextRace) {
+			const raceDay = new Date(`${this.nextRace.date}`);
+			const today = new Date(Date.now());
+
+			return (today.getDate() == raceDay.getDate() &&
+					today.getMonth() == raceDay.getMonth() &&
+					today.getFullYear() == raceDay.getFullYear());
+
+		} else {
+			// Not the best solution, but otherwise the flow hangs
+			return false;
+		}
 	}
 
 	async createDriverStandingTokens() {

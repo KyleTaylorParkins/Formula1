@@ -26,5 +26,9 @@
   "2.0.5": {
     "en": "Added Flow trigger for the sprint races. Fixed a bug to prevent wrong null check.",
     "nl": "Flow trigger voor de sprintraces toegevoegd. Bug opgelost met null check."
+  },
+  "2.0.6": {
+    "en": "Added Flow condition to check if there is a race today.",
+    "nl": "Flow 'en' kaart toegevoegd 'er is een race vandaag'."
   }
 }
