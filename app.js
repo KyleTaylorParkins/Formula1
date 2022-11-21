@@ -63,6 +63,8 @@ class FormulaOne extends Homey.App {
 			this.driverStandingTokens = [];
 			await this.createDriverStandingTokens();
 			this.fillDriverStandingTokens();
+		} else {
+			this.log('Race is null, no current race data to use');
 		}
 
 		// Updater loopje
@@ -78,6 +80,8 @@ class FormulaOne extends Homey.App {
 				this.setTimerBeforeQualifyingStart();
 				this.setTimerBeforeSprintRaceStart();
 				this.triggerWinnerFlow();
+			} else {
+				this.log('Race is null, no current race data to use');
 			}
 		}, updaterTimeout);
 	}
