@@ -34,5 +34,9 @@
   "2.0.7": {
     "en": "Fixed a bug where no sprint race is available and the app crashes.",
     "nl": "Bug opgelost die de app liet crashen wanneer er geen sprint race is."
+  },
+  "2.0.8": {
+    "en": "Fixed a bug where the app would crash when there is no race in the schedule. Added new, free to use assets.",
+    "nl": "Bug opgelost die de app liet crashen wanneer er geen race beschikaar is. Nieuwe rechtenvrije plaatjes toegevoegd."
   }
 }
