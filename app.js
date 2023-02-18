@@ -309,8 +309,14 @@ class FormulaOne extends Homey.App {
 			var counter = 0;
 			if (standings) {
 				standings.forEach(standing => {
-					this.driverStandingTokens[counter].setValue(`${standing.position}. ${standing.givenName} ${standing.familyName}`);
-					counter++;
+					try {
+						this.driverStandingTokens[counter].setValue(`${standing.position}. ${standing.givenName} ${standing.familyName}`);
+						counter++;
+					} catch(err) {
+						console.log('Error whilst setting driverStandingToken');
+						console.err(err);
+					};
+					
 				});
 			}
 		}
