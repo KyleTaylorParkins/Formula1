@@ -314,7 +314,7 @@ class FormulaOne extends Homey.App {
 						counter++;
 					} catch(err) {
 						console.log('Error whilst setting driverStandingToken');
-						console.err(err);
+						console.error(err);
 					};
 					
 				});

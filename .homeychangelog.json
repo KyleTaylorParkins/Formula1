@@ -42,5 +42,9 @@
   "2.0.9": {
     "en": "Small bugfixes to prevent crashes.",
     "nl": "Kleine aanpassingen om crashen te voorkomen."
+  },
+  "2.0.10": {
+    "en": "Additional bugfixes to prevent crashes.",
+    "nl": "Meer aanpassingen om crashen te voorkomen."
   }
 }
