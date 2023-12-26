@@ -87,7 +87,7 @@ class FormulaOne extends Homey.App {
 	}
 
 	async setTimerBeforeRaceStart() {
-		if (this.nextRace) {
+		if (this.nextRace && this.nextRace.date && this.nextRace.time) {
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			const timeDelta = (this.raceStartTime.getTime() - Date.now());
@@ -150,7 +150,7 @@ class FormulaOne extends Homey.App {
 	}
 
 	async setTimerBeforeRaceStart() {
-		if (this.nextRace) {
+		if (this.nextRace && this.nextRace.date && this.nextRace.time) {
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			const timeDelta = (this.raceStartTime.getTime() - Date.now());
@@ -239,7 +239,7 @@ class FormulaOne extends Homey.App {
 	}
 
 	async triggerWinnerFlow() {
-		if (this.nextRace) {
+		if (this.nextRace && this.nextRace.date && this.nextRace.time) {
 			const raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			if (raceStartTime >= TIMER_THRESHOLD) return;
@@ -259,7 +259,7 @@ class FormulaOne extends Homey.App {
 	}
 
 	async isRaceOngoing() {
-		if (this.nextRace) {
+		if (this.nextRace&& this.nextRace.date && this.nextRace.time) {
 			const raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			const refreshTimeOut = raceStartTime.getTime() + AFTER_RACE_TIMEOUT;
@@ -274,7 +274,7 @@ class FormulaOne extends Homey.App {
 	}
 
 	async isRaceDay() {
-		if (this.nextRace) {
+		if (this.nextRace && this.nextRace.date) {
 			const raceDay = new Date(`${this.nextRace.date}`);
 			const today = new Date(Date.now());
 
