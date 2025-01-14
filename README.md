@@ -19,17 +19,7 @@ Condition that is true when a race is ongoing
 - App Flow tokens
 Tokens with the current championship standings.
 
-## Changelog
-- v1.0.5
-Build in basic API caching to reduce the load on the remote server.
-Added a few checks to prevent the app from crashing when there is no data.
-
-- v1.0.3
-Cancel timers for Flows when setting new ones. This should resolve the issue that Flows related to the race start are triggered multiple times.
-
-- v1.0.2
-Don't trigger flows after race start.
-Various small bug fixes
-
-- v1.0.0.
-First release
+## Resources
+This app uses the Ergast Developer API: https://ergast.com/mrd/
+App icon: https://commons.wikimedia.org/wiki/Category:Formula_One_logos#/media/File:F1_(white).svg (Public domain)
+App image: https://commons.wikimedia.org/wiki/File:2022_British_Grand_Prix_(52381424167).jpg (Creative Commons Attribution 2.0 Generic license.)

@@ -1,70 +1,99 @@
 'use strict';
 
-const Homey = require('homey');
+const Homey			= require('homey');
 const FormulaOneApi = require('./lib/FormulaOneApi');
 
-const AFTER_RACE_TIMEOUT = 2.5 * 60 * 60 * 1000; // 2.5 hours in miliseconds
-const RACE_DURATION = 2 * 60 * 60 * 1000; // 2 hours in miliseconds
-const DATA_REFRESH_TIMEOUT = 24 * 60 * 60 *1000; // 24 hours data refresh in milliseconds
-const TIMER_THRESHOLD = 2 * 24 * 60 * 60 * 1000 // 2 Days in miliseconds
+const MINUTE				= 1		* 60	  * 1000;		// One minute used for timouts etc
+const AFTER_RACE_TIMEOUT	= 3		* 60 * 60 * 1000;		// 3 hours timeout for after the race
+const RACE_DURATION			= 2		* 60 * 60 * 1000;		// 2 hours in which the race should be finished
+const DATA_REFRESH_TIMEOUT	= 24	* 60 * 60 * 1000;		// 24 hours data refresh
+const TIMER_THRESHOLD		= 2* 24 * 60 * 60 * 1000;		// 2 Days threshold for timers
+const TEST_REFRESH			= 1			 * 60 * 1000;		// 5 minute test timeout
 
 class FormulaOne extends Homey.App {
 	
-	onInit() {
-		this.api = new FormulaOneApi();
+	async onInit() {
+		this.test = false;
 
-		// Flows aanmaken
-    	this.raceStartTriggerFlow = new Homey.FlowCardTrigger('race_start');
-		this.raceStartTriggerFlow
-			.register();
+		this.api = new FormulaOneApi(this.test);
 
-		this.raceStartsInTriggerFlow = new Homey.FlowCardTrigger('race_in');
-		this.raceStartsInTriggerFlow
-			.register()
-			.registerRunListener(async (args, state) => {
-				if (args.time_before == state.time) return true;
-				else return false;
-			})
+		// Create the Flows
+    	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
 
-		this.raceWonByTriggerFlow = new Homey.FlowCardTrigger('winner');
-		this.raceWonByTriggerFlow
-			.register();
+		this.qualiStartsInTriggerFlow = this.homey.flow.getTriggerCard('qualifying_in');
+		this.qualiStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
+			else return false;
+		});
 
-		this.isRacingConditionFlow = new Homey.FlowCardCondition('is_racing');
-		this.isRacingConditionFlow
-			.register()
-			.registerRunListener(async (args, state) => {
-				return this.isRaceOngoing();
-			})
-	
-		// Set Flow timeout
-		this.setTimerRaceStart();
-		this.setTimerBeforeRaceStart();
-		this.triggerWinnerFlow();
+		this.raceStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
+		this.raceStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
+			else return false;
+		});
 
-		// Create app tokens
-		this.driverStandingTokens = [];
-		this.fillDriverStandingTokens();
+		this.sprintRaceStartsInTriggerFlow = this.homey.flow.getTriggerCard('sprint_in');
+		this.sprintRaceStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
+			else return false;
+		});
+
+		this.raceWonByTriggerFlow = this.homey.flow.getTriggerCard('winner');
+
+		this.isRacingConditionFlow = this.homey.flow.getConditionCard('is_racing');
+		this.isRacingConditionFlow.registerRunListener(async (args, state) => {
+			return this.isRaceOngoing();
+		});
+		
+		this.isRaceDayConditionFlow = this.homey.flow.getConditionCard('is_raceday');
+		this.isRaceDayConditionFlow.registerRunListener(async (args, state) => {
+			return this.isRaceDay();
+		});
+
+		this.nextRace = await this.api.getNextRace();
+
+		if (this.nextRace !== null) {
+			// Set Flow timeout
+			this.setTimerBeforeRaceStart();
+			this.setTimerBeforeQualifyingStart();
+			this.setTimerBeforeSprintRaceStart();
+			this.triggerWinnerFlow();
+
+			// Create app tokens
+			this.driverStandingTokens = [];
+			await this.createDriverStandingTokens();
+			this.fillDriverStandingTokens();
+		} else {
+			this.log('Race is null, no current race data to use');
+		}
 
 		// Updater loopje
-		this.updaterLoop = setInterval(() => {
+		const updaterTimeout = this.test ? TEST_REFRESH : DATA_REFRESH_TIMEOUT;
+		this.updaterLoop = setInterval(async() => {
 			this.log('Updating data from API');
-			this.fillDriverStandingTokens();
-			this.setTimerRaceStart();
-			this.setTimerBeforeRaceStart();
-			this.triggerWinnerFlow();
-		}, DATA_REFRESH_TIMEOUT);
+			this.nextRace = await this.api.getNextRace();
+
+			if (!this.nextRace !== null) {
+				// Update all elements
+				this.fillDriverStandingTokens();
+				this.setTimerBeforeRaceStart();
+				this.setTimerBeforeQualifyingStart();
+				this.setTimerBeforeSprintRaceStart();
+				this.triggerWinnerFlow();
+			} else {
+				this.log('Race is null, no current race data to use');
+			}
+		}, updaterTimeout);
 	}
 
-	async setTimerRaceStart() {
-		this.nextRace = await this.api.getNextRace();
-		if (this.nextRace) { // todo handle reject/result?
+	async setTimerBeforeRaceStart() {
+		if (this.nextRace && this.nextRace.date && this.nextRace.time) {
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			const timeDelta = (this.raceStartTime.getTime() - Date.now());
 
 			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
-			if (timeDelta <= 0) return; // We don't want to trigger after the race has started
+			if (timeDelta <= 0) return; 			  // We don't want to trigger after the race has started
 
 			this.log('Setting timers for race_start trigger with timeout', timeDelta);
 
@@ -82,67 +111,136 @@ class FormulaOne extends Homey.App {
 		}
 	}
 
+	async setTimerBeforeQualifyingStart() {
+		if (this.nextRace && this.nextRace.qualifying !== undefined) {
+			this.raceStartTime = new Date(`${this.nextRace.qualifying.date}T${this.nextRace.qualifying.time}`);
+
+			const timeDelta = (this.raceStartTime.getTime() - Date.now());
+
+			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
+			if (timeDelta <= 0) return; 			  // We don't want to trigger after the race has started
+
+			this.log('Setting timers for qualifying_in trigger with timeout', (timeDelta / 1000 / 60));
+
+			const raceObject = {
+				race_name: this.nextRace.raceName,
+				circuit: this.nextRace.circuit,
+			}
+
+			if (this.fiveMinQualiTimeout) clearTimeout(this.fiveMinQualiTimeout);
+			if (timeDelta >= (5 * MINUTE)) this.fiveMinQualiTimeout = setTimeout(() => {
+				this.qualiStartsInTriggerFlow.trigger(raceObject, {time: "5"} );
+			}, (timeDelta - (5 * MINUTE)) );
+			
+			if (this.tenMinQualiTimeout) clearTimeout(this.tenMinQualiTimeout);
+			if (timeDelta >= (10 * MINUTE)) this.tenMinQualiTimeout = setTimeout(() => {
+				this.qualiStartsInTriggerFlow.trigger(raceObject, {time: "10"} );
+			}, (timeDelta - (10 * MINUTE)) );
+
+			if (this.thirtyMinQualiTimeout) clearTimeout(this.thirtyMinQualiTimeout);
+			if (timeDelta >= (30 * MINUTE)) this.thirtyMinQualiTimeout = setTimeout(() => {
+				this.qualiStartsInTriggerFlow.trigger(raceObject, {time: "30"} );
+			}, (timeDelta - (30 * MINUTE)) );
+
+			if (this.sixtyMinQualiTimeout) clearTimeout(this.sixtyMinQualiTimeout);
+			if (timeDelta >= (60 * MINUTE)) this.sixtyMinQualiTimeout = setTimeout(() => {
+				this.qualiStartsInTriggerFlow.trigger(raceObject, {time: "60"} );
+			}, (timeDelta - (60 * MINUTE)) );
+		}
+	}
+
 	async setTimerBeforeRaceStart() {
-		this.nextRace = await this.api.getNextRace();
-		if (this.nextRace) {
+		if (this.nextRace && this.nextRace.date && this.nextRace.time) {
 			this.raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			const timeDelta = (this.raceStartTime.getTime() - Date.now());
 
 			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
-			if (timeDelta <= 0) return; // We don't want to trigger after the race has started
+			if (timeDelta <= 0) return; 			  // We don't want to trigger after the race has started
 
-			this.log('Setting timers for before_start trigger with timeout', timeDelta);
+			this.log('Setting timers for race_in trigger with timeout', (timeDelta / 1000 / 60));
 
+			const raceObject = {
+				race_name: this.nextRace.raceName,
+				circuit: this.nextRace.circuit,
+			}
+
+			// Clear timeouts and check if the time remaining to the race is longer then the time to trigger
 			if (this.fiveMinRaceTimeout) clearTimeout(this.fiveMinRaceTimeout);
-			this.fiveMinRaceTimeout = setTimeout(() => {
+			if (timeDelta >= (5 * MINUTE)) this.fiveMinRaceTimeout = setTimeout(() => {
 				this.log('Triggering 5 minutes start timer');
 				// Trigger the flow and create token data
-				this.raceStartsInTriggerFlow.trigger({
-					race_name: this.nextRace.raceName,
-					circuit: this.nextRace.circuit,
-				}, {time: "5"} );
-			}, (timeDelta - (5*60*1000)) );
-
+				this.raceStartsInTriggerFlow.trigger(raceObject, {time: "5"} );
+			}, (timeDelta - (5 * MINUTE)) );
+			
 			if (this.tenMinRaceTimeout) clearTimeout(this.tenMinRaceTimeout);
-			this.tenMinRaceTimeout = setTimeout(() => {
+			if (timeDelta >= (10 * MINUTE)) this.tenMinRaceTimeout = setTimeout(() => {
 				this.log('Triggering 10 minutes start timer');
-
-				// Trigger the flow and create token data
-				this.raceStartsInTriggerFlow.trigger({
-					race_name: this.nextRace.raceName,
-					circuit: this.nextRace.circuit,
-				}, {time: "10"} );
-			}, (timeDelta - (10*60*1000)) );
-
+				this.raceStartsInTriggerFlow.trigger(raceObject, {time: "10"} );
+			}, (timeDelta - (10 * MINUTE)) );
 
 			if (this.thirtyMinRaceTimeout) clearTimeout(this.thirtyMinRaceTimeout);
-			this.thirtyMinRaceTimeout = setTimeout(() => {
+			if (timeDelta >= (30 * MINUTE)) this.thirtyMinRaceTimeout = setTimeout(() => {
 				this.log('Triggering 30 minutes start timer');
-
-				// Trigger the flow and create token data
-				this.raceStartsInTriggerFlow.trigger({
-					race_name: this.nextRace.raceName,
-					circuit: this.nextRace.circuit,
-				}, {time: "30"} );
-			}, (timeDelta - (30*60*1000)) );
-
+				this.raceStartsInTriggerFlow.trigger(raceObject, {time: "30"} );
+			}, (timeDelta - (30 * MINUTE)) );
 
 			if (this.sixtyMinRaceTimeout) clearTimeout(this.sixtyMinRaceTimeout);
-			this.sixtyMinRaceTimeout = setTimeout(() => {
+			if (timeDelta >= (60 * MINUTE)) this.sixtyMinRaceTimeout = setTimeout(() => {
 				this.log('Triggering 60 minutes start timer');
-				this.raceStartsInTriggerFlow.trigger({
-					race_name: this.nextRace.raceName,
-					circuit: this.nextRace.circuit,
-				}, {time: "60"} );
-			}, (timeDelta - (60*60*1000)) );
+				this.raceStartsInTriggerFlow.trigger(raceObject, {time: "60"} );
+			}, (timeDelta - (60 * MINUTE)) );
+		}
+	}
+
+	async setTimerBeforeSprintRaceStart() {
+		if (this.nextRace && this.nextRace.sprint !== undefined) {
+			this.log(`SPRINT: ${this.nextRace.sprint}`);
+			this.raceStartTime = new Date(`${this.nextRace.sprint.date}T${this.nextRace.sprint.time}`);
+	
+			const timeDelta = (this.raceStartTime.getTime() - Date.now());
+	
+			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
+			if (timeDelta <= 0) return; 			  // We don't want to trigger after the race has started
+	
+			this.log('Setting timers for sprint_in trigger with timeout', (timeDelta / 1000 / 60));
+	
+			const raceObject = {
+				race_name: this.nextRace.raceName,
+				circuit: this.nextRace.circuit,
+			}
+	
+			// Clear timeouts and check if the time remaining to the race is longer then the time to trigger
+			if (this.fiveMinSprintRaceTimeout) clearTimeout(this.fiveMinSprintRaceTimeout);
+			if (timeDelta >= (5 * MINUTE)) this.fiveMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 5 minutes sprint start timer');
+				// Trigger the flow and create token data
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "5"} );
+			}, (timeDelta - (5 * MINUTE)) );
+			
+			if (this.tenMinSprintRaceTimeout) clearTimeout(this.tenMinSprintRaceTimeout);
+			if (timeDelta >= (10 * MINUTE)) this.tenMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 10 minutes start timer');
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "10"} );
+			}, (timeDelta - (10 * MINUTE)) );
+	
+			if (this.thirtyMinSprintRaceTimeout) clearTimeout(this.thirtyMinSprintRaceTimeout);
+			if (timeDelta >= (30 * MINUTE)) this.thirtyMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 30 minutes start timer');
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "30"} );
+			}, (timeDelta - (30 * MINUTE)) );
+	
+			if (this.sixtyMinSprintRaceTimeout) clearTimeout(this.sixtyMinSprintRaceTimeout);
+			if (timeDelta >= (60 * MINUTE)) this.sixtyMinSprintRaceTimeout = setTimeout(() => {
+				this.log('Triggering 60 minutes start timer');
+				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "60"} );
+			}, (timeDelta - (60 * MINUTE)) );
 		}
 	}
 
 	async triggerWinnerFlow() {
-		const nextRace = await this.api.getNextRace();
-		if (nextRace) {
-			const raceStartTime = new Date(`${nextRace.date}T${nextRace.time}`);
+		if (this.nextRace && this.nextRace.date && this.nextRace.time) {
+			const raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			if (raceStartTime >= TIMER_THRESHOLD) return;
 
@@ -152,52 +250,75 @@ class FormulaOne extends Homey.App {
 			if (this.winnerTimeout) clearTimeout(this.winnerTimeout);
 			this.winnerTimeout = setTimeout(async () => {
 				const winnerData = await this.api.getWinner();
+				this.log("Triggering winner flow");
 				this.raceWonByTriggerFlow.trigger({
 					driver_name: `${winnerData.givenName} ${winnerData.familyName}`,
-				})
+				});
 			}, timeout);
 		}
 	}
 
 	async isRaceOngoing() {
-		const nextRace = await this.api.getNextRace();
-			if (nextRace) {
-			const raceStartTime = new Date(`${nextRace.date}T${nextRace.time}`);
+		if (this.nextRace&& this.nextRace.date && this.nextRace.time) {
+			const raceStartTime = new Date(`${this.nextRace.date}T${this.nextRace.time}`);
 
 			const refreshTimeOut = raceStartTime.getTime() + AFTER_RACE_TIMEOUT;
 			const timeout = refreshTimeOut - Date.now();
 
 			if (timeout > 0 && timeout <= RACE_DURATION) return true;
 			else return false;
+		} else {
+			// Not the best solution, but otherwise the flow hangs
+			return false;
+		}
+	}
+
+	async isRaceDay() {
+		if (this.nextRace && this.nextRace.date) {
+			const raceDay = new Date(`${this.nextRace.date}`);
+			const today = new Date(Date.now());
+
+			return (today.getDate() == raceDay.getDate() &&
+					today.getMonth() == raceDay.getMonth() &&
+					today.getFullYear() == raceDay.getFullYear());
+
+		} else {
+			// Not the best solution, but otherwise the flow hangs
+			return false;
+		}
+	}
+
+	async createDriverStandingTokens() {
+		// Use the current standings to get the current amount of drivers in the season.
+		const standings = await this.api.getDriverStandings();
+		if (standings && (standings.length != this.driverStandingTokens.length)) {
+			for (var counter = 0; counter <= standings.length; counter++) {
+				this.driverStandingTokens.push(
+					await this.homey.flow.createToken(`standing_${counter}`, {
+						type: 'string',
+						title: `Position ${1 + counter}`
+					})
+				);
 			}
 		}
+	}
 
 	async fillDriverStandingTokens() {
 		const standings = await this.api.getDriverStandings();
 		if (standings) {
-			if (standings.length != this.driverStandingTokens.length){
-				for (var counter = 0; counter <= standings.length; counter++) {
-					this.driverStandingTokens.push(
-						new Homey.FlowToken(`standing_${counter}`, {
-							type: 'string',
-							title: `Postion ${1 + counter}`
-						})
-					);
-				}
-				this.driverStandingTokens.forEach(async standingToken => {
-					await standingToken.register();
-				})
-			}
-
-			setTimeout(() => {
-				var counter = 0;
-				if (standings) {
-					standings.forEach(standing => {
+			var counter = 0;
+			if (standings) {
+				standings.forEach(standing => {
+					try {
 						this.driverStandingTokens[counter].setValue(`${standing.position}. ${standing.givenName} ${standing.familyName}`);
 						counter++;
-					});
-				}
-			}, 3000);
+					} catch(err) {
+						console.log('Error whilst setting driverStandingToken');
+						console.error(err);
+					};
+					
+				});
+			}
 		}
 	}
 }

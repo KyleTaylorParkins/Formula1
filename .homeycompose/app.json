@@ -1,0 +1,50 @@
+{
+  "id": "com.athom.formula1",
+  "version": "2.0.11",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "name": {
+    "en": "Formula 1",
+    "nl": "Formule 1"
+  },
+  "brandColor": "#E10600",
+  "tags": {
+    "en": [
+      "Formula one",
+      "F1",
+      "Racing"
+    ],
+    "nl": [
+      "Formule 1",
+      "F1",
+      "Race"
+    ]
+  },
+  "description": {
+    "en": "Never miss a Formula 1 race again!",
+    "nl": "Mis geen enkele Formule 1 race meer!"
+  },
+  "category": [
+    "tools"
+  ],
+  "permissions": [],
+  "images": {
+    "large": "/assets/images/large.png",
+    "small": "/assets/images/small.png"
+  },
+  "author": {
+    "name": "Kaalus",
+    "email": "homey@kaalus.nl"
+  },
+  "contributors": {
+    "developers": [
+      {
+        "name": "Bram van Rooijen",
+        "email": "bram@athom.nl"
+      }
+    ]
+  },
+  "platforms": [
+    "local"
+  ]
+}
