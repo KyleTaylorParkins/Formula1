@@ -4,19 +4,19 @@ This app lets you integrate the current Formula 1 schedule in Homey!
 
 ## Functionality
 
-### Flow trigger when race starts
+- Flow trigger when race starts
 Triggers when the race starts. Has tokens for race name and location
 
-### Flow trigger with timer before the race starts
+- Flow trigger with timer before the race starts
 Triggers a setable amount of time before the race starts
 
-### Flow trigger with winner token
+- Flow trigger with winner token
 Triggers after the race when the winner is determined. Token with the name of the winner.
 
-### Flow condition if racing
+- Flow condition if racing
 Condition that is true when a race is ongoing
 
-### App Flow tokens
+- App Flow tokens
 Tokens with the current championship standings.
 
 ## Resources
