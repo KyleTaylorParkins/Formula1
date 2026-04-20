@@ -50,5 +50,9 @@
   "2.0.11": {
     "en": "Additional checks to valdidate race date. This prevents weird Flow triggers such as the driver who won without a race today.",
     "nl": "Meer controles op een geldige datum van de race. Dit voorkomt dat Flows getriggerd worden terwijl er geen race is/was."
+  },
+  "2.0.12": {
+    "en": "Switch to jolpica API due to the deprecation of the Ergast API.",
+    "nl": "Overgestapt op de jolpica API wegens het eindigen van de Ergast API."
   }
 }
