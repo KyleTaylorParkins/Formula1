@@ -3,7 +3,7 @@
 const Homey			= require('homey');
 const FormulaOneApi = require('./lib/FormulaOneApi');
 
-const MINUTE				= 1		* 60	  * 1000;		// One minute used for timouts etc
+const MINUTE				= 1		* 60	  * 1000;		// One minute used for timeouts etc
 const AFTER_RACE_TIMEOUT	= 3		* 60 * 60 * 1000;		// 3 hours timeout for after the race
 const RACE_DURATION			= 2		* 60 * 60 * 1000;		// 2 hours in which the race should be finished
 const DATA_REFRESH_TIMEOUT	= 24	* 60 * 60 * 1000;		// 24 hours data refresh
@@ -20,12 +20,6 @@ class FormulaOne extends Homey.App {
 		// Create the Flows
     	this.raceStartTriggerFlow = this.homey.flow.getTriggerCard('race_start');
 
-		this.qualiStartsInTriggerFlow = this.homey.flow.getTriggerCard('qualifying_in');
-		this.qualiStartsInTriggerFlow.registerRunListener(async (args, state) => {
-			if (args.time_before == state.time) return true;
-			else return false;
-		});
-
 		this.raceStartsInTriggerFlow = this.homey.flow.getTriggerCard('race_in');
 		this.raceStartsInTriggerFlow.registerRunListener(async (args, state) => {
 			if (args.time_before == state.time) return true;
@@ -34,6 +28,18 @@ class FormulaOne extends Homey.App {
 
 		this.sprintRaceStartsInTriggerFlow = this.homey.flow.getTriggerCard('sprint_in');
 		this.sprintRaceStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
+			else return false;
+		});
+
+		this.qualiStartsInTriggerFlow = this.homey.flow.getTriggerCard('qualifying_in');
+		this.qualiStartsInTriggerFlow.registerRunListener(async (args, state) => {
+			if (args.time_before == state.time) return true;
+			else return false;
+		});
+
+		this.practiceStartsInTriggerFlow = this.homey.flow.getTriggerCard('practice_in');
+		this.practiceStartsInTriggerFlow.registerRunListener(async (args, state) => {
 			if (args.time_before == state.time) return true;
 			else return false;
 		});
@@ -63,6 +69,7 @@ class FormulaOne extends Homey.App {
 			this.driverStandingTokens = [];
 			await this.createDriverStandingTokens();
 			this.fillDriverStandingTokens();
+			this.log('All race data updated and timers set');
 		} else {
 			this.log('Race is null, no current race data to use');
 		}
@@ -95,7 +102,7 @@ class FormulaOne extends Homey.App {
 			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
 			if (timeDelta <= 0) return; 			  // We don't want to trigger after the race has started
 
-			this.log('Setting timers for race_start trigger with timeout', timeDelta);
+			this.log('Setting timers for race_start trigger with timeout', (timeDelta / 1000 / 60));
 
 			// If the timeout already exists, clear it to prevent multiple flow triggers
 			if (this.raceStartTimeout) clearTimeout(this.raceStartTimeout);
@@ -220,20 +227,79 @@ class FormulaOne extends Homey.App {
 			
 			if (this.tenMinSprintRaceTimeout) clearTimeout(this.tenMinSprintRaceTimeout);
 			if (timeDelta >= (10 * MINUTE)) this.tenMinSprintRaceTimeout = setTimeout(() => {
-				this.log('Triggering 10 minutes start timer');
+				this.log('Triggering 10 minutes sprint start timer');
 				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "10"} );
 			}, (timeDelta - (10 * MINUTE)) );
 	
 			if (this.thirtyMinSprintRaceTimeout) clearTimeout(this.thirtyMinSprintRaceTimeout);
 			if (timeDelta >= (30 * MINUTE)) this.thirtyMinSprintRaceTimeout = setTimeout(() => {
-				this.log('Triggering 30 minutes start timer');
+				this.log('Triggering 30 minutes sprint start timer');
 				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "30"} );
 			}, (timeDelta - (30 * MINUTE)) );
 	
 			if (this.sixtyMinSprintRaceTimeout) clearTimeout(this.sixtyMinSprintRaceTimeout);
 			if (timeDelta >= (60 * MINUTE)) this.sixtyMinSprintRaceTimeout = setTimeout(() => {
-				this.log('Triggering 60 minutes start timer');
+				this.log('Triggering 60 minutes sprint start timer');
 				this.sprintRaceStartsInTriggerFlow.trigger(raceObject, {time: "60"} );
+			}, (timeDelta - (60 * MINUTE)) );
+		}
+	}
+
+	async setTimerBeforeSprintRaceStart() {
+		if (this.nextRace) {
+			this.practice = null;
+			if (this.nextRace.thirdPractice !== undefined) {
+				this.practice = this.nextRace.thirdPractice;
+			} else if (this.nextRace.secondPractice !== undefined) {
+				this.practice = this.nextRace.secondPractice;
+			} else if (this.nextRace.firstPractice !== undefined) {
+				this.practice = this.nextRace.firstPractice;
+			} else {
+				this.log(`[ERROR] No valid practice data found!`);
+				return;
+			}
+			
+			this.log(`PRACTICE: ${this.nextRace.firstPractice}`);
+
+			// TODO hergebruik deze code om alle trainingen te zetten
+			this.raceStartTime = new Date(`${this.practice.date}T${this.practice.time}`);
+	
+			const timeDelta = (this.raceStartTime.getTime() - Date.now());
+	
+			if (timeDelta >= TIMER_THRESHOLD) return; // Don't set timer longer then 2 days before the race.
+			if (timeDelta <= 0) return; 			  // We don't want to trigger after the race has started
+	
+			this.log('Setting timers for practice_in trigger with timeout', (timeDelta / 1000 / 60));
+	
+			const raceObject = {
+				race_name: this.nextRace.raceName,
+				circuit: this.nextRace.circuit,
+			}
+	
+			// Clear timeouts and check if the time remaining to the race is longer then the time to trigger
+			if (this.fiveMinPracticeTimeout) clearTimeout(this.fiveMinPracticeTimeout);
+			if (timeDelta >= (5 * MINUTE)) this.fiveMinPracticeTimeout = setTimeout(() => {
+				this.log('Triggering 5 minutes practice start timer');
+				// Trigger the flow and create token data
+				this.practiceStartsInTriggerFlow.trigger(raceObject, {time: "5"} );
+			}, (timeDelta - (5 * MINUTE)) );
+			
+			if (this.tenMinPracticeTimeout) clearTimeout(this.tenMinPracticeTimeout);
+			if (timeDelta >= (10 * MINUTE)) this.tenMinPracticeTimeout = setTimeout(() => {
+				this.log('Triggering 10 minutes practice start timer');
+				this.practiceStartsInTriggerFlow.trigger(raceObject, {time: "10"} );
+			}, (timeDelta - (10 * MINUTE)) );
+	
+			if (this.thirtyMinPracticeTimeout) clearTimeout(this.thirtyMinPracticeTimeout);
+			if (timeDelta >= (30 * MINUTE)) this.thirtyMinPracticeTimeout = setTimeout(() => {
+				this.log('Triggering 30 minutes practice start timer');
+				this.practiceStartsInTriggerFlow.trigger(raceObject, {time: "30"} );
+			}, (timeDelta - (30 * MINUTE)) );
+	
+			if (this.sixtyMinPracticeTimeout) clearTimeout(this.sixtyMinPracticeTimeout);
+			if (timeDelta >= (60 * MINUTE)) this.sixtyMinPracticeTimeout = setTimeout(() => {
+				this.log('Triggering 60 minutes practice start timer');
+				this.practiceStartsInTriggerFlow.trigger(raceObject, {time: "60"} );
 			}, (timeDelta - (60 * MINUTE)) );
 		}
 	}

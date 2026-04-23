@@ -54,5 +54,9 @@
   "2.0.12": {
     "en": "Switch to jolpica API due to the deprecation of the Ergast API.",
     "nl": "Overgestapt op de jolpica API wegens het eindigen van de Ergast API."
+  },
+  "2.0.13": {
+    "en": "Add Flow trigger for practice sessions. Minor changes.",
+    "nl": "Flow trigger toegevoegd voor vrije traning. Kleine aanpassingen."
   }
 }
